@@ -1,0 +1,20 @@
+{
+  "admin": {
+    "password": "admin123",
+    "role": "administrator",
+    "active": true,
+    "email": "admin@example.com"
+  },
+  "user1": {
+    "password": "password123",
+    "role": "user",
+    "active": true,
+    "email": "user1@example.com"
+  },
+  "disabled_user": {
+    "password": "secret",
+    "role": "user",
+    "active": false,
+    "email": "disabled@example.com"
+  }
+}

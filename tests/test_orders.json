@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "amount": 100.50,
+    "customer": "张三"
+  },
+  {
+    "id": 2,
+    "amount": -50.00,
+    "customer": "李四"
+  },
+  {
+    "id": 3,
+    "customer": "王五"
+  }
+]

@@ -1,0 +1,30 @@
+# BUG-{{ sequence }}
+
+- **项目**: {{ project }}
+- **触发时间**: {{ timestamp }}
+- **环境**: {{ environment }}
+- **优先级**: {{ severity }}
+- **触发命令**: `{{ command }}`
+- **复现步骤**:
+{% for step in reproduction_steps %}
+  - {{ step }}
+{% else %}
+  - 待补充
+{% endfor %}
+- **预期行为**: {{ expected }}
+- **实际行为**: {{ actual }}
+- **可能原因**: {{ probable_cause }}
+- **标签**: {{ tags | join(", ") }}
+
+## 核心日志
+```text
+{{ log_excerpt }}
+```
+
+## 堆栈摘要
+```text
+{{ stack_summary }}
+```
+
+## 备注
+{{ extra_notes }}

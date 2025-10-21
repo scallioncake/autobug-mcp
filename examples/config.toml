@@ -1,0 +1,21 @@
+# Obsidian Vault 根路径
+vault_root = "/Users/ken/Documents/xibu/HMI/bugs"
+
+# 默认项目名称（可被 CLI 参数覆盖）
+default_project = "demo_project"
+
+# 模板路径（可选，默认 templates/bug_report.md.j2）
+template_path = "templates/bug_report.md.j2"
+
+[llm]
+# provider 可选：openai, deepseek
+provider = "deepseek"
+model = "DeepSeek-V3.2-Exp"
+# 指向存储 API Key 的环境变量名称
+api_key_env = ""
+
+[llm.prompt]
+# 可选：自定义 system prompt（若不填使用内置）
+system = ""
+# 可选：用逗号分隔的标签前缀
+default_tags = "自动化,日志"
