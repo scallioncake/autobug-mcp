@@ -1,13 +1,83 @@
-# auto-bug CLI MVP
+# auto-bug 
 
-最小可行 CLI：将 IDE/测试执行日志通过 LLM 转换为 Obsidian 中的 Bug 表单。现已支持 MCP Server，便于在 Cursor 等 IDE 中直接调用。
+## 当前能力
 
+- 支持 OpenAI（GPT 系列）和 DeepSeek 两类提供方，统一 HTTP 调用。
+- bug_report: 基于上下文模版化生成bug报告
+- debug_report: 基于上下文模版化生成debug报告
+
+## TODO
+
+
+## MCP 使用指南（实验性）
+
+### 基本流程  
+1. **准备配置**
+   - 在仓库根目录配置 `config.toml`：写入 Obsidian Vault 路径（本地存储路径）、默认项目名、使用的 LLM 提供方以及对应 API Key名称。
+   - API Key 放入 `.env`，程序会自动加载。
+
+2. **运行命令**：
+   ```bash
+   # 安装依赖
+   uv sync 
+   
+   # 激活虚拟环境
+   ...
+
+   # 启动MCP客户端
+   auto-bug-mcp --host 127.0.0.1 --port 8001 --transport sse
+   ```
+
+3. **在客户端登记**  
+- vscode
+  1. 在设置中启用MCP
+![VSCode MCP 配置说明](assets/vs_instruction1.png)
+  2. 在当前项目中添加 .vscode/mcp.json 文件，为该工作区配置 MCP 服务器，如：
+    ```
+    {
+      "servers": {
+        "auto-bug": {
+          "url": "http://127.0.0.1:8001/sse",
+          "type": "sse"
+        }
+      },
+      "inputs": []
+    }
+    ```
+  3.  使用 # 工具名称 + 相关参数/指令补充 
+
+- cursor
+  1. 打开 Cursor Settings -> Tools & MCP -> New MCP Server, 配置
+    ```
+    {
+    "mcpServers": {
+      "auto-bug": {
+        "url": "http://127.0.0.1:8001/sse"
+      }
+    }
+  }
+    ```  
+  2. 在chat中使用agent模式， / + command， 可以create command
+
+### 使用建议
+- 提供完整的上下文信息，如日志、命令、行为路径...
+- 当MCP调用参数解析错误时可主动指定参数，`bug_report`及`debug_report`可输入参数
+  ```json
+  {
+    "project": "demo_project",
+    "log_text": "Traceback (most recent call last): ...",
+    "command": "python test.py --data orders_bad.json",
+    "environment": "local-dev",
+    "persist": true
+  }
+  ```
+- 若 `persist=true`，服务会创建 `vault_root/project/bugNNN.md` 并把 Markdown 返回给客户端；`persist=false` 时仅返回内容，不写文件。
+
+
+**CLI**
 ## 基本流程
 
-1. 准备配置：
-   - 在仓库根目录创建 `config.toml`（示例见 `examples/config.toml`）。
-   - 写入 Obsidian Vault 路径、默认项目名、使用的 LLM 提供方以及对应 API Key。
-   - API Key 可放到 `.env`，程序会自动加载。
+
 2. 运行命令：
    ```bash
    cursor run tests > latest.log
@@ -27,83 +97,3 @@
 - 支持 OpenAI（GPT 系列）和 DeepSeek 两类提供方，统一 HTTP 调用。
 - 失败时提供最小错误提示，不会覆盖已有文件。
 - 模板可按需自定义（参见 `templates/bug_report.md.j2`）。
-
-## TODO
-
-- 日志签名去重与聚合。
-- 增强错误分类、标题生成策略。
-- 更丰富的 CLI 子命令（例如 `config list`、`vault sync`）。
-
-## MCP 使用指南（实验性）
-
-**准备条件**
-- 已在项目根目录配置 `config.toml` 与 `.env`（参考 `examples/`）。
-- 先安装基础 CLI：`uv pip install --editable .` 或 `pip install -e .`。
-- 再安装 MCP 依赖：`uv pip install --editable '.[mcp]'`（或 `pip install -e '.[mcp]'`）。若处于离线环境，请在有网的机器上下载 `mcp[cli]` 对应的 wheel 文件后再安装。
-- 确保 Obsidian Vault 路径可写，LLM API Key 可正常访问。
-
-**启动服务**
-```bash
-auto-bug-mcp --host 127.0.0.1 --port 8001 --transport sse
-```
-默认使用 SSE 方式提供 HTTP 接口，地址为 `http://127.0.0.1:8001/sse`（消息回传路径 `http://127.0.0.1:8001/messages/`）。若仅想本地调试，可改为 `--transport stdio`。
-
-**在客户端登记（以 Cursor 为例）**
-1. 打开 Cursor → `Settings` → `Model Providers` → `Model Context Protocol (MCP)`。
-2. 添加自定义服务：名称自定，`URL` 填 `http://127.0.0.1:8001/sse`，`Transport` 选择 SSE。
-3. 保存后，Cursor 会自动列出 `bug_report` / `debug_report` 工具。
-
-**发送请求**
-- 在 Cursor 命令面板选择 `bug_report`，按提示输入 JSON 负载，例如：
-  ```json
-  {
-    "project": "demo_project",
-    "log_text": "Traceback (most recent call last): ...",
-    "command": "python test.py --data orders_bad.json",
-    "environment": "local-dev",
-    "persist": true
-  }
-  ```
-- 若 `persist=true`，服务会创建 `vault_root/project/bugNNN.md` 并把 Markdown 返回给客户端；`persist=false` 时仅返回内容，不写文件。
-- 工具参数说明：
-  - `log_text` (`str`, 必填)：完整的终端或测试日志文本，用于分析缺陷。
-  - `project` (`str | null`, 默认 `None`)：项目名；未提供时回退到配置文件里的默认项目。
-  - `command` (`str`, 默认 `unknown`)：触发该日志的命令或操作描述。
-  - `environment` (`str`, 默认 `local`)：执行环境标识，例如 `local-dev`、`CI`。
-  - `persist` (`bool`, 默认 `True`)：是否把生成的 Markdown 写入 Obsidian Vault；设为 `False` 时仅返回内容。
-  - `config_path` (`str | null`, 默认 `None`)：自定义配置文件路径；留空则使用当前工作目录下的 `config.toml`。
-- 新增工具 `debug_report`：帮助快速整理调试过程，生成包含初始状态、分析过程、解决方案等部分的 Markdown 模板。
-  - 参数说明：
-    - `log_text` (`str`, 必填)：完整的终端或测试日志文本，用于复现调试过程。
-    - `project` (`str | null`, 默认 `None`)：项目名；未提供时使用配置中的默认值。
-    - `command` (`str`, 默认 `unknown`)：触发调试会话的命令或关键操作。
-    - `environment` (`str`, 默认 `local`)：调试所处环境，例如 `local-dev`、`CI`。
-    - `persist` (`bool`, 默认 `True`)：是否将生成的调试 Markdown 持久化到 Vault。
-    - `config_path` (`str | null`, 默认 `None`)：可显式指定配置文件路径。
-  - 返回 JSON 会包含 `analysis_process`、`fix_steps`、`verification` 等字段，方便 IDE 进一步处理。
-- 如需自定义调试模板，可在 `config.toml` 中配置 `debug_template_path`，默认为 `templates/debug_report.md.j2`。
-
-**命令行快速验证（SSE）**
-```bash
-python - <<'PY'
-import anyio, json
-from mcp.client.sse import sse_client
-from mcp.client.session import ClientSession
-
-async def main():
-    payload = json.load(open("examples/mcp_request.json"))
-    async with sse_client("http://127.0.0.1:8001/sse") as (read_stream, write_stream):
-        async with ClientSession(read_stream, write_stream) as session:
-            await session.initialize()
-            result = await session.call_tool("bug_report", payload)
-            print(result.content[0].text)
-            await session.shutdown()
-
-anyio.run(main)
-PY
-```
-
-**常见问题**
-- `请求参数错误`：确认 JSON 结构与字段名称正确，可参考 `examples/mcp_request.json`。
-- `配置加载失败`：检查 `config.toml` 路径；如需指定其他配置文件，在请求体中传入 `config_path`。
-- `生成缺陷报告失败`：多为 LLM API Key 未设置或网络问题，检查 `.env` 与代理设置；必要时加大日志截取范围后重试。
