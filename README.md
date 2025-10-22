@@ -65,6 +65,13 @@ auto-bug-mcp --host 127.0.0.1 --port 8001 --transport sse
   }
   ```
 - 若 `persist=true`，服务会创建 `vault_root/project/bugNNN.md` 并把 Markdown 返回给客户端；`persist=false` 时仅返回内容，不写文件。
+- 工具参数说明：
+  - `log_text` (`str`, 必填)：完整的终端或测试日志文本，用于分析缺陷。
+  - `project` (`str | null`, 默认 `None`)：项目名；未提供时回退到配置文件里的默认项目。
+  - `command` (`str`, 默认 `unknown`)：触发该日志的命令或操作描述。
+  - `environment` (`str`, 默认 `local`)：执行环境标识，例如 `local-dev`、`CI`。
+  - `persist` (`bool`, 默认 `True`)：是否把生成的 Markdown 写入 Obsidian Vault；设为 `False` 时仅返回内容。
+  - `config_path` (`str | null`, 默认 `None`)：自定义配置文件路径；留空则使用当前工作目录下的 `config.toml`。
 
 **命令行快速验证（SSE）**
 ```bash
