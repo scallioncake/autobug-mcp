@@ -29,10 +29,17 @@ class AppConfig(BaseModel):
     vault_root: Path
     default_project: str = Field(default="default_project")
     template_path: Path = Field(default=Path("templates/bug_report.md.j2"))
+    debug_template_path: Path = Field(default=Path("templates/debug_report.md.j2"))
     llm: LLMConfig = Field(default_factory=LLMConfig)
 
     def resolve_template(self, base_dir: Path) -> Path:
         template = self.template_path
+        if not template.is_absolute():
+            template = base_dir / template
+        return template
+
+    def resolve_debug_template(self, base_dir: Path) -> Path:
+        template = self.debug_template_path
         if not template.is_absolute():
             template = base_dir / template
         return template

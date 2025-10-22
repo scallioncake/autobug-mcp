@@ -6,6 +6,8 @@ default_project = "demo_project"
 
 # 模板路径（可选，默认 templates/bug_report.md.j2）
 template_path = "templates/bug_report.md.j2"
+# 调试模板路径（可选，默认 templates/debug_report.md.j2）
+# debug_template_path = "templates/debug_report.md.j2"
 
 [llm]
 # provider 可选：openai, deepseek

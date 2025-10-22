@@ -1,0 +1,48 @@
+# DEBUG-{{ sequence }} {{ report_title }}
+
+- **项目**: {{ project }}
+- **记录时间**: {{ timestamp }}
+- **环境**: {{ environment }}
+- **命令/操作**: `{{ command }}`
+
+## 初始状态
+{{ initial_state }}
+
+## 症状概述
+{{ symptom_summary }}
+
+## 调试分析
+{% for step in analysis_process %}
+- {{ step }}
+{% else %}
+- 待补充
+{% endfor %}
+
+## 根因判定
+{{ root_cause }}
+
+## 解决方案
+{% for step in fix_steps %}
+- {{ step }}
+{% else %}
+- 待补充
+{% endfor %}
+
+## 验证结果
+{{ verification }}
+
+## 经验教训
+{{ lessons }}
+
+## 附加备注
+{{ extra_notes }}
+
+## 关键日志
+```text
+{{ log_excerpt }}
+```
+
+## 堆栈摘要
+```text
+{{ stack_summary }}
+```

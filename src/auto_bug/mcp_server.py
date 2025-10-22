@@ -18,7 +18,7 @@ except ImportError as exc:  # pragma: no cover
     ) from exc
 
 from .config import load_config
-from .core import generate_bug_record
+from .core import generate_bug_record, generate_debug_record
 
 console = Console()
 
@@ -34,10 +34,10 @@ def create_server(host: str, port: int, instructions: Optional[str] = None) -> F
     )
 
     @server.tool(
-        name="generate_bug_report",
+        name="bug_report",
         description="根据日志文本生成缺陷报告，可选写入 Obsidian。",
     )
-    async def generate_bug_report(  # type: ignore[unused-variable]
+    async def bug_report(  # type: ignore[unused-variable]
         log_text: Annotated[str, Field(description="完整的终端/测试日志文本")],
         project: Annotated[
             Optional[str], Field(description="项目名，留空则使用配置默认值")
@@ -103,6 +103,80 @@ def create_server(host: str, port: int, instructions: Optional[str] = None) -> F
             "actual": result.report.actual,
             "probable_cause": result.report.probable_cause,
             "tags": result.report.tags,
+        }
+
+    @server.tool(
+        name="debug_report",
+        description="根据日志生成调试报告模板，包含初始状态、分析过程与解决方案。",
+    )
+    async def debug_report(  # type: ignore[unused-variable]
+        log_text: Annotated[str, Field(description="完整的终端/测试日志文本")],
+        project: Annotated[
+            Optional[str], Field(description="项目名，留空则使用配置默认值")
+        ] = None,
+        command: Annotated[
+            str, Field(description="触发日志的命令或操作")
+        ] = "unknown",
+        environment: Annotated[
+            str, Field(description="执行环境描述，例如 local-dev、CI 等")
+        ] = "local",
+        persist: Annotated[
+            bool, Field(description="是否写入 Obsidian Vault")
+        ] = True,
+        config_path: Annotated[
+            Optional[str],
+            Field(description="自定义配置文件路径，默认为工作目录下 config.toml"),
+        ] = None,
+    ) -> dict[str, object]:
+        load_dotenv()
+        base_dir = Path.cwd()
+
+        resolved_config: Path
+        if config_path:
+            resolved_config = Path(config_path).expanduser().resolve()
+            config_dir = resolved_config.parent
+            config_name = resolved_config.name
+        else:
+            config_dir = base_dir
+            config_name = "config.toml"
+
+        try:
+            config = load_config(config_dir, config_name)
+        except Exception as exc:  # pragma: no cover
+            raise ValueError(f"配置加载失败：{exc}") from exc
+
+        target_project = project or config.default_project
+
+        try:
+            result = generate_debug_record(
+                base_dir=base_dir,
+                config=config,
+                project=target_project,
+                log_text=log_text,
+                command=command,
+                environment=environment,
+                persist=persist,
+            )
+        except Exception as exc:  # pragma: no cover
+            raise ValueError(f"生成调试报告失败：{exc}") from exc
+
+        return {
+            "project": result.project,
+            "sequence": result.sequence,
+            "persisted": result.persisted,
+            "report_title": result.report.report_title,
+            "command": result.command,
+            "environment": result.environment,
+            "markdown": result.markdown,
+            "file_path": str(result.file_path) if result.file_path else None,
+            "initial_state": result.report.initial_state,
+            "symptom_summary": result.report.symptom_summary,
+            "analysis_process": result.report.analysis_process,
+            "root_cause": result.report.root_cause,
+            "fix_steps": result.report.fix_steps,
+            "verification": result.report.verification,
+            "lessons": result.report.lessons,
+            "extra_notes": result.report.extra_notes,
         }
 
     return server

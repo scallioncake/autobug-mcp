@@ -51,10 +51,10 @@ auto-bug-mcp --host 127.0.0.1 --port 8001 --transport sse
 **在客户端登记（以 Cursor 为例）**
 1. 打开 Cursor → `Settings` → `Model Providers` → `Model Context Protocol (MCP)`。
 2. 添加自定义服务：名称自定，`URL` 填 `http://127.0.0.1:8001/sse`，`Transport` 选择 SSE。
-3. 保存后，Cursor 会自动列出 `generate_bug_report` 工具。
+3. 保存后，Cursor 会自动列出 `bug_report` / `debug_report` 工具。
 
 **发送请求**
-- 在 Cursor 命令面板选择 `generate_bug_report`，按提示输入 JSON 负载，例如：
+- 在 Cursor 命令面板选择 `bug_report`，按提示输入 JSON 负载，例如：
   ```json
   {
     "project": "demo_project",
@@ -72,6 +72,16 @@ auto-bug-mcp --host 127.0.0.1 --port 8001 --transport sse
   - `environment` (`str`, 默认 `local`)：执行环境标识，例如 `local-dev`、`CI`。
   - `persist` (`bool`, 默认 `True`)：是否把生成的 Markdown 写入 Obsidian Vault；设为 `False` 时仅返回内容。
   - `config_path` (`str | null`, 默认 `None`)：自定义配置文件路径；留空则使用当前工作目录下的 `config.toml`。
+- 新增工具 `debug_report`：帮助快速整理调试过程，生成包含初始状态、分析过程、解决方案等部分的 Markdown 模板。
+  - 参数说明：
+    - `log_text` (`str`, 必填)：完整的终端或测试日志文本，用于复现调试过程。
+    - `project` (`str | null`, 默认 `None`)：项目名；未提供时使用配置中的默认值。
+    - `command` (`str`, 默认 `unknown`)：触发调试会话的命令或关键操作。
+    - `environment` (`str`, 默认 `local`)：调试所处环境，例如 `local-dev`、`CI`。
+    - `persist` (`bool`, 默认 `True`)：是否将生成的调试 Markdown 持久化到 Vault。
+    - `config_path` (`str | null`, 默认 `None`)：可显式指定配置文件路径。
+  - 返回 JSON 会包含 `analysis_process`、`fix_steps`、`verification` 等字段，方便 IDE 进一步处理。
+- 如需自定义调试模板，可在 `config.toml` 中配置 `debug_template_path`，默认为 `templates/debug_report.md.j2`。
 
 **命令行快速验证（SSE）**
 ```bash
@@ -85,7 +95,7 @@ async def main():
     async with sse_client("http://127.0.0.1:8001/sse") as (read_stream, write_stream):
         async with ClientSession(read_stream, write_stream) as session:
             await session.initialize()
-            result = await session.call_tool("generate_bug_report", payload)
+            result = await session.call_tool("bug_report", payload)
             print(result.content[0].text)
             await session.shutdown()
 
